@@ -7,26 +7,28 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import it.polito.tdp.food.model.Condiment;
+import it.polito.tdp.food.model.Edge;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
 
 public class FoodDao {
-	public List<Food> listAllFoods(){
-		String sql = "SELECT * FROM food" ;
+	public List<Edge> listAllFoods(Integer C){
+		String sql = "select lower(p1.portion_display_name) as port1, lower(p2.portion_display_name) as port2, count(*) as peso from portion as p1, portion as p2 where p1.food_code = p2.food_code and p1.portion_display_name < p2.portion_display_name and p1.calories < ? and p2.calories < ? group by p1.portion_display_name, p2.portion_display_name" ;
 		try {
 			Connection conn = DBConnect.getConnection() ;
 
 			PreparedStatement st = conn.prepareStatement(sql) ;
 			
-			List<Food> list = new ArrayList<>() ;
+			List<Edge> list = new ArrayList<>() ;
+			
+			st.setInt(1, C);
+			st.setInt(2, C);
 			
 			ResultSet res = st.executeQuery() ;
 			
 			while(res.next()) {
 				try {
-					list.add(new Food(res.getInt("food_code"),
-							res.getString("display_name")
-							));
+					list.add(new Edge(res.getString("port1"), res.getString("port2"), res.getInt("peso")));
 				} catch (Throwable t) {
 					t.printStackTrace();
 				}
@@ -74,26 +76,22 @@ public class FoodDao {
 		}
 	}
 	
-	public List<Portion> listAllPortions(){
-		String sql = "SELECT * FROM portion" ;
+	public List<String> listAllPortions(Integer C){
+		String sql = "select distinct lower(portion_display_name) as port from portion where calories < ? order by port ASC" ;
 		try {
 			Connection conn = DBConnect.getConnection() ;
 
 			PreparedStatement st = conn.prepareStatement(sql) ;
 			
-			List<Portion> list = new ArrayList<>() ;
+			List<String> list = new ArrayList<>() ;
+			
+			st.setInt(1, C);
 			
 			ResultSet res = st.executeQuery() ;
 			
 			while(res.next()) {
 				try {
-					list.add(new Portion(res.getInt("portion_id"),
-							res.getDouble("portion_amount"),
-							res.getString("portion_display_name"), 
-							res.getDouble("calories"),
-							res.getDouble("saturated_fats"),
-							res.getInt("food_code")
-							));
+					list.add(res.getString("port"));
 				} catch (Throwable t) {
 					t.printStackTrace();
 				}
